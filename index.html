@@ -61,6 +61,14 @@
               </svg>
               <span>Exporter la classe (PDF)</span>
             </button>
+            <!-- NOUVEAU: Bouton d'aide (Guide d'utilisation) -->
+            <button
+              id="help-button"
+              class="p-2 bg-sky-600 text-white font-bold rounded-full shadow-sm hover:bg-sky-700 transition-colors flex items-center justify-center text-sm w-8 h-8"
+              title="Guide d'utilisation"
+            >
+              ?
+            </button>
           </div>
           <!-- Sélecteur d'enseignant -->
           <div class="flex items-center space-x-3">
@@ -88,17 +96,45 @@
       </main>
     </div>
 
+    <!-- NOUVEAU: Modal de Guide d'utilisation -->
+    <div id="help-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto z-50">
+        <!-- En-tête du modal -->
+        <div class="flex justify-between items-center p-4 border-b">
+          <h3 class="text-xl font-bold text-slate-800">Guide d'utilisation</h3>
+          <button id="close-modal-button" class="text-slate-500 hover:text-slate-800 font-bold text-2xl">&times;</button>
+        </div>
+        <!-- Contenu du modal -->
+        <div class="p-6">
+          <ol class="list-decimal list-inside space-y-3 text-slate-700">
+            <li>Je choisis le type de semestre (ex: S1, S2...).</li>
+            <li>Je me connecte en tant que professeur (voir menu déroulant).</li>
+            <li>Je sélectionne l'élève dans la liste de gauche.</li>
+            <li>Je choisis les appréciations (Qualité du travail, Comportement...) selon les menus déroulants.</li>
+            <li>Je laisse un commentaire (facultatif).</li>
+            <li>J'enregistre l'avis. Un rond vert apparaît en face du nom de l'élève.
+              <br><small class="text-slate-500">(Note: Pour le RGPD, l'enregistrement se fait sur la mémoire tampon de votre PC, il n'est pas stocké en ligne.)</small>
+            </li>
+            <li>Je complète les avis pour l'ensemble (ou une partie) des élèves.</li>
+            <li>Une fois terminé, je clique sur "Exporter la classe (PDF)" en haut de la page.</li>
+            <li>J'envoie le PDF à Jean-Philippe qui fera une synthèse.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+    <!-- Fin du Modal -->
+
+
     <!-- 
-      Début du script JavaScript (équivalent de app.js)
+      Début du script JavaScript
       Ce script contient toute la logique de l'application.
     -->
     <script type="module">
       // Importation de jsPDF depuis l'import map
       import jsPDF from 'jspdf';
 
-      // --- Définition des Constantes (depuis constants.ts) ---
+      // --- Définition des Constantes (Similaire à types.ts et constants.ts) ---
 
-      // Recréation des enums (types.ts)
       const NiveauOption = {
         Excellent: 'Excellent',
         Bon: 'Bon',
@@ -139,14 +175,19 @@
         { id: 1, nom: "ABDELMAJID", prenom: "Khadija", avis: [] },
         { id: 2, nom: "BABI", prenom: "Nour", avis: [] },
         { id: 3, nom: "BELHADI", prenom: "Mélissa", avis: [] },
-        // ... (tous les autres élèves de votre liste)
-        { id: 10, nom: "HASSANI", prenom: "Killyann", avis: [] },
-        { id: 11, nom: "INSELIN", prenom: "Enzo", avis: [] },
-        { id: 12, nom: "KONNEH", prenom: "Karamba", avis: [] },
+        { id: 4, nom: "BOUKHIAR", prenom: "Fatima", avis: [] },
+        { id: 5, nom: "CHARLES", prenom: "Glory", avis: [] },
+        { id: 6, nom: "DESLONG", prenom: "Rayane Bamba", avis: [] },
+        { id: 7, nom: "DEVILLE", prenom: "Chloé", avis: [] },
+        { id: 8, nom: "EGLELA", prenom: "Orlane", avis: [] },
+        { id: 9, nom: "EL ASRI", prenom: "Ayman", avis: [] },
+        { id: 10, nom: "GUELLOULI", prenom: "Malak", avis: [] },
+        { id: 11, nom: "HASSANI", prenom: "Killyann", avis: [] },
+        { id: 12, nom: "INSELIN", prenom: "Enzo", avis: [] },
         { id: 13, nom: "JILAVU", prenom: "Maria-Teodora", avis: [] },
         { id: 14, nom: "JOJUA", prenom: "Giorgi", avis: [] },
         { id: 15, nom: "KHACHATRIAN", prenom: "Angelina", avis: [] },
-        { id: 16, nom: "QACHRI", prenom: "Adem", avis: [] },
+        { id: 16, nom: "KONNEH", prenom: "Karamba", avis: [] },
         { id: 17, nom: "LUNIMBU", prenom: "Fernanda", avis: [] },
         { id: 18, nom: "MUNIER", prenom: "Kelly", avis: [] },
         { id: 19, nom: "OUERFELLI", prenom: "Samia", avis: [] },
@@ -177,16 +218,37 @@
       const PERIODES = ['mi-S1', 'S1', 'mi-S2', 'S2'];
 
       // --- État de l'application (similaire à useState) ---
+      
+      // Fonction pour charger l'état depuis localStorage (simule la mémoire tampon)
+      function loadStateFromStorage() {
+        try {
+          const storedState = localStorage.getItem('studentFeedbackAppState');
+          if (storedState) {
+            return JSON.parse(storedState);
+          }
+        } catch (error) {
+          console.error("Erreur lors de la lecture du localStorage:", error);
+        }
+        return {
+          eleves: JSON.parse(JSON.stringify(ELEVES_INITIAUX)),
+          selectedEleveId: ELEVES_INITIAUX[0]?.id ?? null,
+          currentEnseignantId: ENSEIGNANTS[0]?.id ?? null,
+          selectedPeriod: 'S1',
+        };
+      }
+      
+      // Fonction pour sauvegarder l'état dans localStorage
+      function saveStateToStorage() {
+        try {
+          localStorage.setItem('studentFeedbackAppState', JSON.stringify(state));
+        } catch (error) {
+          console.error("Erreur lors de l'écriture dans le localStorage:", error);
+        }
+      }
 
-      // L'état est stocké dans un seul objet pour une gestion facile.
-      // On utilise JSON.parse/stringify pour cloner en profondeur les élèves initiaux
-      // afin d'éviter de modifier les constantes.
-      const state = {
-        eleves: JSON.parse(JSON.stringify(ELEVES_INITIAUX)),
-        selectedEleveId: 1, // Démarrer avec le premier élève sélectionné
-        currentEnseignantId: ENSEIGNANTS[0]?.id ?? null,
-        selectedPeriod: 'S1',
-      };
+      // Initialisation de l'état
+      const state = loadStateFromStorage();
+
 
       // --- Fonctions de Rendu (similaires aux composants React) ---
 
@@ -204,6 +266,8 @@
         sortedEleves.forEach(eleve => {
           const isSelected = eleve.id === state.selectedEleveId;
           const avisEnseignant = eleve.avis.find(a => a.enseignantId === state.currentEnseignantId);
+          
+          // Vérifie si l'avis est considéré comme "complété"
           const hasAvis = avisEnseignant && (
             avisEnseignant.avis.travail !== NiveauOption.NonEvalue ||
             avisEnseignant.avis.comportement !== NiveauOption.NonEvalue ||
@@ -223,8 +287,8 @@
                 ${eleve.nom} ${eleve.prenom}
               </span>
               ${hasAvis ? 
-                `<span title="Avis complété" class="h-2 w-2 bg-green-500 rounded-full"></span>` : 
-                `<span title="Avis non complété" class="h-2 w-2 bg-slate-300 rounded-full"></span>`
+                `<span title="Avis complété" class="h-3 w-3 bg-green-500 rounded-full flex-shrink-0"></span>` : 
+                `<span title="Avis non complété" class="h-3 w-3 bg-slate-300 rounded-full flex-shrink-0"></span>`
               }
             </div>
           `;
@@ -250,13 +314,13 @@
         if (!selectedEleve || !state.currentEnseignantId) {
           container.innerHTML = `
             <div class="flex items-center justify-center h-full">
-              <div class="text-center text-slate-500">
+              <div class="text-center text-slate-500 p-8">
                 <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21v-1a6 6 0 00-5.176-5.97M15 21v-1a6 6 0 00-9-5.197m0 0A11.95 11.95 0 0012 13a11.95 11.95 0 00-3-5.197m-6 0A11.95 11.95 0 0012 13a11.95 11.95 0 006-5.197M12 13a4 4 0 110-5.292 4 4 0 010 5.292z" />
                 </svg>
                 <h3 class="mt-2 text-lg font-medium text-slate-700">Prêt à commencer</h3>
                 <p class="mt-1 text-sm text-slate-500">
-                  ${state.currentEnseignantId ? "Veuillez sélectionner un élève pour commencer." : "Veuillez vous identifier pour commencer."}
+                  Veuillez sélectionner un élève dans la liste à gauche.
                 </p>
               </div>
             </div>
@@ -265,7 +329,7 @@
         }
 
         // Trouve l'avis existant ou utilise l'avis initial
-        const existingAvis = selectedEleve.avis.find(a => a.enseignantId === state.currentEnseignantId)?.avis ?? AVIS_INITIAL;
+        const existingAvis = selectedEleve.avis.find(a => a.enseignantId === state.currentEnseignantId)?.avis ?? JSON.parse(JSON.stringify(AVIS_INITIAL));
         const enseignant = ENSEIGNANTS.find(e => e.id === state.currentEnseignantId);
 
         // Crée les options pour les listes déroulantes
@@ -295,7 +359,9 @@
             <form id="feedback-form" class="space-y-6">
               <!-- Section Qualité du travail -->
               <div>
-                <label for="avis-travail" class="block text-sm font-medium text-slate-700 mb-1">Qualité du travail</label>
+                <label for="avis-travail" class="block text-sm font-medium text-slate-700 mb-1">
+                  Qualité du travail
+                </label>
                 <select id="avis-travail" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
                   ${niveauOptionsHtml}
                 </select>
@@ -303,7 +369,9 @@
 
               <!-- Section Comportement en classe -->
               <div>
-                <label for="avis-comportement" class="block text-sm font-medium text-slate-700 mb-1">Comportement en classe</label>
+                <label for="avis-comportement" class="block text-sm font-medium text-slate-700 mb-1">
+                  Comportement en classe
+                </label>
                 <select id="avis-comportement" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
                   ${comportementOptionsHtml}
                 </select>
@@ -311,7 +379,9 @@
 
               <!-- Section Attitude -->
               <div>
-                <label for="avis-attitude" class="block text-sm font-medium text-slate-700 mb-1">Attitude (sérieux, implication)</label>
+                <label for="avis-attitude" class="block text-sm font-medium text-slate-700 mb-1">
+                  Attitude (sérieux, implication)
+                </label>
                 <select id="avis-attitude" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
                   ${attitudeOptionsHtml}
                 </select>
@@ -319,7 +389,9 @@
 
               <!-- Section Difficultés rencontrées -->
               <div>
-                <label for="avis-difficultes" class="block text-sm font-medium text-slate-700 mb-1">Difficultés rencontrées</label>
+                <label for="avis-difficultes" class="block text-sm font-medium text-slate-700 mb-1">
+                  Difficultés rencontrées
+                </label>
                 <select id="avis-difficultes" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
                   ${difficultesOptionsHtml}
                 </select>
@@ -392,6 +464,8 @@
         renderSelectors();
         renderStudentList();
         renderFeedbackForm();
+        // Sauvegarde l'état après chaque rendu
+        saveStateToStorage(); 
       }
 
       // --- Gestionnaires d'Événements ---
@@ -401,23 +475,8 @@
        */
       function handleSelectEleve(id) {
         state.selectedEleveId = id;
-        // Pas besoin de re-render la liste des élèves, seulement le formulaire
         renderFeedbackForm();
-        
-        // Met à jour la surbrillance dans la liste des élèves
-        const container = document.getElementById('student-list-container');
-        if (container) {
-          container.childNodes.forEach((node, index) => {
-            const eleve = [...state.eleves].sort((a, b) => a.nom.localeCompare(b.nom))[index];
-            if (eleve) {
-              if (eleve.id === id) {
-                node.className = node.className.replace('hover:bg-slate-50', 'bg-sky-100').replace('text-slate-800', 'text-sky-700');
-              } else {
-                node.className = node.className.replace('bg-sky-100', 'hover:bg-slate-50').replace('text-sky-700', 'text-slate-800');
-              }
-            }
-          });
-        }
+        renderStudentList(); // Re-render pour la surbrillance
       }
 
       /**
@@ -469,7 +528,7 @@
           return { ...eleve, avis: newAvisArray };
         });
 
-        // Affiche une confirmation
+        // Affiche une confirmation visuelle
         const saveButton = document.getElementById('save-avis-button');
         const originalText = saveButton.innerHTML;
         saveButton.innerHTML = 'Enregistré !';
@@ -482,8 +541,8 @@
           saveButton.classList.add('bg-sky-600', 'hover:bg-sky-700');
         }, 1500);
 
-        // Met à jour la liste des élèves pour afficher la pastille de statut
-        renderStudentList();
+        // Met à jour la liste des élèves pour afficher la pastille de statut et sauvegarde l'état
+        renderApp();
       }
 
       /**
@@ -595,6 +654,28 @@
         // Attache les gestionnaires d'événements statiques
         document.getElementById('teacher-select').addEventListener('change', handleTeacherChange);
         document.getElementById('export-pdf-button').addEventListener('click', handleExportClassePDF);
+
+        // Gestion du modal d'aide
+        const helpButton = document.getElementById('help-button');
+        const helpModal = document.getElementById('help-modal');
+        const closeModalButton = document.getElementById('close-modal-button');
+
+        if (helpButton && helpModal && closeModalButton) {
+          helpButton.addEventListener('click', () => {
+            helpModal.classList.remove('hidden');
+          });
+
+          closeModalButton.addEventListener('click', () => {
+            helpModal.classList.add('hidden');
+          });
+
+          // Fermer en cliquant sur l'overlay (le fond gris)
+          helpModal.addEventListener('click', (e) => {
+            if (e.target === helpModal) {
+              helpModal.classList.add('hidden');
+            }
+          });
+        }
 
         // Lance le premier rendu de l'application
         renderApp();

@@ -9,7 +9,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 
       Import map pour charger des modules JavaScript comme 'jspdf'.
-      Ceci est repris de votre index.html original.
     -->
     <script type="importmap">
       {
@@ -39,7 +38,6 @@
   <body class="h-full m-0">
     <!-- 
       La structure HTML principale de l'application.
-      Les conteneurs de la liste et du formulaire seront remplis par JavaScript.
     -->
     <div id="app-root" class="h-screen w-screen flex flex-col font-sans">
       <header class="w-full bg-white shadow-md z-10 print:hidden">
@@ -61,7 +59,7 @@
               </svg>
               <span>Exporter la classe (PDF)</span>
             </button>
-            <!-- NOUVEAU: Bouton d'aide (Guide d'utilisation) -->
+            <!-- Bouton d'aide (Guide d'utilisation) -->
             <button
               id="help-button"
               class="p-2 bg-sky-600 text-white font-bold rounded-full shadow-sm hover:bg-sky-700 transition-colors flex items-center justify-center text-sm w-8 h-8"
@@ -96,7 +94,7 @@
       </main>
     </div>
 
-    <!-- NOUVEAU: Modal de Guide d'utilisation -->
+    <!-- Modal de Guide d'utilisation -->
     <div id="help-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
       <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto z-50">
         <!-- En-tête du modal -->
@@ -110,9 +108,12 @@
             <li>Je choisis le type de semestre (ex: S1, S2...).</li>
             <li>Je me connecte en tant que professeur (voir menu déroulant).</li>
             <li>Je sélectionne l'élève dans la liste de gauche.</li>
-            <li>Je choisis les appréciations (Qualité du travail, Comportement...) selon les menus déroulants.</li>
+            <li>Je choisis les appréciations (Qualité du travail, Comportement...).
+              <br><small class="text-slate-500">(Il n'est pas obligatoire de compléter tous les items.)</small>
+            </li>
             <li>Je laisse un commentaire (facultatif).</li>
-            <li>J'enregistre l'avis. Un rond vert apparaît en face du nom de l'élève.
+            <li>
+              <strong>Pensez à enregistrer l'avis</strong> pour chaque élève. Un rond vert apparaît en face du nom de l'élève.
               <br><small class="text-slate-500">(Note: Pour le RGPD, l'enregistrement se fait sur la mémoire tampon de votre PC, il n'est pas stocké en ligne.)</small>
             </li>
             <li>Je complète les avis pour l'ensemble (ou une partie) des élèves.</li>
@@ -135,22 +136,143 @@
 
       // --- Définition des Constantes (Similaire à types.ts et constants.ts) ---
 
-      const NiveauOption = {
-        Excellent: 'Excellent',
-        Bon: 'Bon',
-        AAmeliorer: 'À améliorer',
-        Insuffisant: 'Insuffisant',
-        NonEvalue: 'Non évalué'
-      };
+      // --- NOUVELLES LISTES DE QUALIFICATIFS ---
+      // (Basé sur qualificatifs_evaluation.md)
 
-      const DifficulteOption = {
-        Aucune: 'Aucune',
-        Mineures: 'Mineures',
-        Moderees: 'Modérées',
-        Majeures: 'Majeures',
-        NonEvalue: 'Non évalué'
-      };
+      const NON_EVALUE = "Non évalué";
 
+      const TRAVAIL_OPTIONS = [
+        { value: NON_EVALUE, label: NON_EVALUE, color: "text-slate-500" },
+        // Positifs
+        { value: "Assidu", label: "Assidu", color: "text-green-600" },
+        { value: "Méthodique", label: "Méthodique", color: "text-green-600" },
+        { value: "Rigoureux", label: "Rigoureux", color: "text-green-600" },
+        { value: "Autonome", label: "Autonome", color: "text-green-600" },
+        { value: "Organisé", label: "Organisé", color: "text-green-600" },
+        { value: "Consciencieux", label: "Consciencieux", color: "text-green-600" },
+        { value: "Investi", label: "Investi", color: "text-green-600" },
+        { value: "Soutenu", label: "Soutenu", color: "text-green-600" },
+        { value: "Sérieux", label: "Sérieux", color: "text-sky-600" },
+        { value: "Régulier", label: "Régulier", color: "text-sky-600" },
+        { value: "Volontaire", label: "Volontaire", color: "text-sky-600" },
+        { value: "Soigné", label: "Soigné", color: "text-sky-600" },
+        { value: "Appliqué", label: "Appliqué", color: "text-sky-600" },
+        { value: "Précis", label: "Précis", color: "text-sky-600" },
+        { value: "Impliqué", label: "Impliqué", color: "text-sky-600" },
+        { value: "Ordonné", label: "Ordonné", color: "text-sky-600" },
+        // Neutres
+        { value: "Inégal", label: "Inégal", color: "text-amber-600" },
+        { value: "Irrégulier", label: "Irrégulier", color: "text-amber-600" },
+        { value: "Ponctuel", label: "Ponctuel", color: "text-amber-600" },
+        { value: "À encourager", label: "À encourager", color: "text-amber-600" },
+        { value: "Souvent distrait", label: "Souvent distrait", color: "text-amber-600" },
+        { value: "Peut mieux faire", label: "Peut mieux faire", color: "text-amber-600" },
+        // Négatifs
+        { value: "Passif", label: "Passif", color: "text-red-600" },
+        { value: "Désinvesti", label: "Désinvesti", color: "text-red-600" },
+        { value: "Peu attentif", label: "Peu attentif", color: "text-red-600" },
+        { value: "Rendu incomplet/tardif", label: "Rendu incomplet/tardif", color: "text-red-600" },
+        { value: "Bâclé", label: "Bâclé", color: "text-red-600" },
+        { value: "Manque de persévérance", label: "Manque de persévérance", color: "text-red-600" },
+        { value: "Négligé", label: "Négligé", color: "text-red-600" },
+        { value: "Superficiel", label: "Superficiel", color: "text-red-600" },
+        { value: "Désordonné", label: "Désordonné", color: "text-red-600" },
+        { value: "Manque d'approfondissement", label: "Manque d'approfondissement", color: "text-red-600" },
+      ];
+
+      const ATTITUDE_OPTIONS = [
+        { value: NON_EVALUE, label: NON_EVALUE, color: "text-slate-500" },
+        // Positifs
+        { value: "Constructif", label: "Constructif", color: "text-green-600" },
+        { value: "Engagé", label: "Engagé", color: "text-green-600" },
+        { value: "Enthousiaste", label: "Enthousiaste", color: "text-green-600" },
+        { value: "Curieux", label: "Curieux", color: "text-green-600" },
+        { value: "Respectueux", label: "Respectueux", color: "text-green-600" },
+        { value: "Coopératif", label: "Coopératif", color: "text-green-600" },
+        { value: "Ouvert", label: "Ouvert", color: "text-green-600" },
+        { value: "Stimulant", label: "Stimulant", color: "text-green-600" },
+        { value: "Bienveillant", label: "Bienveillant", color: "text-green-600" },
+        { value: "Courtois", label: "Courtois", color: "text-sky-600" },
+        { value: "Participatif", label: "Participatif", color: "text-sky-600" },
+        { value: "Attentif", label: "Attentif", color: "text-sky-600" },
+        { value: "Poli", label: "Poli", color: "text-sky-600" },
+        { value: "Intéressé", label: "Intéressé", color: "text-sky-600" },
+        { value: "Sociable", label: "Sociable", color: "text-sky-600" },
+        // Neutres
+        { value: "Réservé", label: "Réservé", color: "text-amber-600" },
+        { value: "Discret", label: "Discret", color: "text-amber-600" },
+        { value: "Silence/mutisme", label: "Silence/mutisme", color: "text-amber-600" },
+        { value: "Variable selon le sujet/jour", label: "Variable selon le sujet/jour", color: "text-amber-600" },
+        { value: "Parfois agité", label: "Parfois agité", color: "text-amber-600" },
+        { value: "Demande à être recadré", label: "Demande à être recadré", color: "text-amber-600" },
+        // Négatifs
+        { value: "Bavard", label: "Bavard", color: "text-red-600" },
+        { value: "Interventions inappropriées", label: "Interventions inappropriées", color: "text-red-600" },
+        { value: "Peut faire preuve d'impertinence", label: "Peut faire preuve d'impertinence", color: "text-red-600" },
+        { value: "Oppositionnel", label: "Oppositionnel", color: "text-red-600" },
+        { value: "Provocateur", label: "Provocateur", color: "text-red-600" },
+        { value: "Perturbateur", label: "Perturbateur", color: "text-red-600" },
+        { value: "Nonchalant", label: "Nonchalant", color: "text-red-600" },
+        { value: "Manque de respect flagrant", label: "Manque de respect flagrant", color: "text-red-600" },
+        { value: "Retrait/isolement excessif", label: "Retrait/isolement excessif", color: "text-red-600" },
+      ];
+
+      const DIFFICULTE_COMPREHENSION_OPTIONS = [
+        { value: NON_EVALUE, label: NON_EVALUE, color: "text-slate-500" },
+        { value: "Aisé", label: "Aisé", color: "text-green-600" },
+        { value: "Rapide", label: "Rapide", color: "text-green-600" },
+        { value: "Clair", label: "Clair", color: "text-green-600" },
+        { value: "Profond", label: "Profond", color: "text-green-600" },
+        { value: "Laborieux", label: "Laborieux", color: "text-red-600" },
+        { value: "Lent", label: "Lent", color: "text-red-600" },
+        { value: "Superficiel", label: "Superficiel", color: "text-red-600" },
+        { value: "Confus", label: "Confus", color: "text-red-600" },
+      ];
+      
+      const DIFFICULTE_LOGIQUE_OPTIONS = [
+        { value: NON_EVALUE, label: NON_EVALUE, color: "text-slate-500" },
+        { value: "Pertinent", label: "Pertinent", color: "text-green-600" },
+        { value: "Structuré", label: "Structuré", color: "text-green-600" },
+        { value: "Synthétique", label: "Synthétique", color: "text-green-600" },
+        { value: "Analytique", label: "Analytique", color: "text-green-600" },
+        { value: "Illogique", label: "Illogique", color: "text-red-600" },
+        { value: "Décousu", label: "Décousu", color: "text-red-600" },
+        { value: "Manque de méthode", label: "Manque de méthode", color: "text-red-600" },
+      ];
+
+      const DIFFICULTE_ACQUISITION_OPTIONS = [
+        { value: NON_EVALUE, label: NON_EVALUE, color: "text-slate-500" },
+        { value: "Solide", label: "Solide", color: "text-green-600" },
+        { value: "Bien ancré", label: "Bien ancré", color: "text-green-600" },
+        { value: "Maîtrisé", label: "Maîtrisé", color: "text-green-600" },
+        { value: "Fragile", label: "Fragile", color: "text-red-600" },
+        { value: "Éphémère", label: "Éphémère", color: "text-red-600" },
+        { value: "Lacunes importantes", label: "Lacunes importantes", color: "text-red-600" },
+      ];
+
+      const DIFFICULTE_POTENTIEL_OPTIONS = [
+        { value: NON_EVALUE, label: NON_EVALUE, color: "text-slate-500" },
+        { value: "Prometteur", label: "Prometteur", color: "text-green-600" },
+        { value: "Évolutif", label: "Évolutif", color: "text-green-600" },
+        { value: "Progresse rapidement", label: "Progresse rapidement", color: "text-green-600" },
+        { value: "Marge de progression importante", label: "Marge de progression importante", color: "text-green-600" },
+        { value: "Progression limitée", label: "Progression limitée", color: "text-red-600" },
+        { value: "Pédagogie à ajuster", label: "Pédagogie à ajuster", color: "text-red-600" },
+        { value: "Difficultés persistantes", label: "Difficultés persistantes", color: "text-red-600" },
+      ];
+
+      const DIFFICULTE_GESTION_ERREURS_OPTIONS = [
+        { value: NON_EVALUE, label: NON_EVALUE, color: "text-slate-500" },
+        { value: "Critique", label: "Critique", color: "text-green-600" },
+        { value: "Remédiation efficace", label: "Remédiation efficace", color: "text-green-600" },
+        { value: "Capacité à s'auto-corriger", label: "Capacité à s'auto-corriger", color: "text-green-600" },
+        { value: "Répétition des erreurs", label: "Répétition des erreurs", color: "text-red-600" },
+        { value: "Ne se remet pas en question", label: "Ne se remet pas en question", color: "text-red-600" },
+        { value: "Refus d'aide", label: "Refus d'aide", color: "text-red-600" },
+      ];
+
+      // --- Listes d'entités ---
+      
       const ENSEIGNANTS = [
         { id: 1, nom: "M. AMAT" },
         { id: 2, nom: "M. DOUMAGNAC" },
@@ -163,14 +285,20 @@
         { id: 9, nom: "MME SANCHEZ" },
       ];
 
+      // NOUVELLE structure pour l'avis initial
       const AVIS_INITIAL = {
-        travail: NiveauOption.NonEvalue,
-        comportement: NiveauOption.NonEvalue,
-        attitude: NiveauOption.NonEvalue,
-        difficultes: DifficulteOption.NonEvalue,
+        travail: NON_EVALUE,
+        comportement: NON_EVALUE,
+        attitude: NON_EVALUE,
+        difficulte_comprehension: NON_EVALUE,
+        difficulte_logique: NON_EVALUE,
+        difficulte_acquisition: NON_EVALUE,
+        difficulte_potentiel: NON_EVALUE,
+        difficulte_gestion_erreurs: NON_EVALUE,
         commentaires: ""
       };
 
+      // Liste des élèves mise à jour
       const ELEVES_INITIAUX = [
         { id: 1, nom: "ABDELMAJID", prenom: "Khadija", avis: [] },
         { id: 2, nom: "BABI", prenom: "Nour", avis: [] },
@@ -199,22 +327,6 @@
         { id: 25, nom: "YANG", prenom: "Danny", avis: [] },
       ];
 
-      const NIVEAU_OPTIONS = [
-        { value: NiveauOption.NonEvalue, label: 'Non évalué', color: 'text-slate-500' },
-        { value: NiveauOption.Excellent, label: 'Excellent', color: 'text-green-600' },
-        { value: NiveauOption.Bon, label: 'Bon', color: 'text-sky-600' },
-        { value: NiveauOption.AAmeliorer, label: 'À améliorer', color: 'text-amber-600' },
-        { value: NiveauOption.Insuffisant, label: 'Insuffisant', color: 'text-red-600' },
-      ];
-
-      const DIFFICULTE_OPTIONS = [
-        { value: DifficulteOption.NonEvalue, label: 'Non évalué', color: 'text-slate-500' },
-        { value: DifficulteOption.Aucune, label: 'Aucune', color: 'text-green-600' },
-        { value: DifficulteOption.Mineures, label: 'Mineures', color: 'text-sky-600' },
-        { value: DifficulteOption.Moderees, label: 'Modérées', color: 'text-amber-600' },
-        { value: DifficulteOption.Majeures, label: 'Majeures', color: 'text-red-600' },
-      ];
-
       const PERIODES = ['mi-S1', 'S1', 'mi-S2', 'S2'];
 
       // --- État de l'application (similaire à useState) ---
@@ -224,11 +336,28 @@
         try {
           const storedState = localStorage.getItem('studentFeedbackAppState');
           if (storedState) {
-            return JSON.parse(storedState);
+            const parsedState = JSON.parse(storedState);
+            // Assurer la compatibilité ascendante si la structure de l'avis a changé
+            parsedState.eleves.forEach(eleve => {
+              eleve.avis.forEach(avisItem => {
+                // Si l'avis est ancien ou n'a pas les nouveaux champs, on le réinitialise/met à jour
+                if (avisItem.avis && typeof avisItem.avis.difficulte_comprehension === 'undefined') {
+                   // Copie les anciennes valeurs si elles existent, sinon utilise AVIS_INITIAL
+                   const oldAvis = avisItem.avis;
+                   avisItem.avis = JSON.parse(JSON.stringify(AVIS_INITIAL));
+                   avisItem.avis.travail = oldAvis.travail || NON_EVALUE;
+                   avisItem.avis.comportement = oldAvis.comportement || NON_EVALUE;
+                   avisItem.avis.attitude = oldAvis.attitude || NON_EVALUE;
+                   avisItem.avis.commentaires = oldAvis.commentaires || "";
+                }
+              });
+            });
+            return parsedState;
           }
         } catch (error) {
           console.error("Erreur lors de la lecture du localStorage:", error);
         }
+        // État initial par défaut
         return {
           eleves: JSON.parse(JSON.stringify(ELEVES_INITIAUX)),
           selectedEleveId: ELEVES_INITIAUX[0]?.id ?? null,
@@ -241,7 +370,8 @@
       function saveStateToStorage() {
         try {
           localStorage.setItem('studentFeedbackAppState', JSON.stringify(state));
-        } catch (error) {
+        } catch (error)
+        {
           console.error("Erreur lors de l'écriture dans le localStorage:", error);
         }
       }
@@ -269,11 +399,15 @@
           
           // Vérifie si l'avis est considéré comme "complété"
           const hasAvis = avisEnseignant && (
-            avisEnseignant.avis.travail !== NiveauOption.NonEvalue ||
-            avisEnseignant.avis.comportement !== NiveauOption.NonEvalue ||
-            avisEnseignant.avis.attitude !== NiveauOption.NonEvalue ||
-            avisEnseignant.avis.difficultes !== DifficulteOption.NonEvalue ||
-            avisEnseignant.avis.commentaires.trim() !== ""
+            avisEnseignant.avis.travail !== NON_EVALUE ||
+            avisEnseignant.avis.comportement !== NON_EVALUE ||
+            avisEnseignant.avis.attitude !== NON_EVALUE ||
+            avisEnseignant.avis.difficulte_comprehension !== NON_EVALUE ||
+            avisEnseignant.avis.difficulte_logique !== NON_EVALUE ||
+            avisEnseignant.avis.difficulte_acquisition !== NON_EVALUE ||
+            avisEnseignant.avis.difficulte_potentiel !== NON_EVALUE ||
+            avisEnseignant.avis.difficulte_gestion_erreurs !== NON_EVALUE ||
+            (avisEnseignant.avis.commentaires && avisEnseignant.avis.commentaires.trim() !== "")
           );
 
           const studentDiv = document.createElement('div');
@@ -339,10 +473,17 @@
           ).join('');
         };
         
-        const niveauOptionsHtml = createOptions(NIVEAU_OPTIONS, existingAvis.travail);
-        const comportementOptionsHtml = createOptions(NIVEAU_OPTIONS, existingAvis.comportement);
-        const attitudeOptionsHtml = createOptions(NIVEAU_OPTIONS, existingAvis.attitude);
-        const difficultesOptionsHtml = createOptions(DIFFICULTE_OPTIONS, existingAvis.difficultes);
+        // Crée le HTML pour chaque liste d'options
+        const travailOptionsHtml = createOptions(TRAVAIL_OPTIONS, existingAvis.travail);
+        const comportementOptionsHtml = createOptions(ATTITUDE_OPTIONS, existingAvis.comportement);
+        const attitudeOptionsHtml = createOptions(ATTITUDE_OPTIONS, existingAvis.attitude);
+        
+        const diffComprehensionHtml = createOptions(DIFFICULTE_COMPREHENSION_OPTIONS, existingAvis.difficulte_comprehension);
+        const diffLogiqueHtml = createOptions(DIFFICULTE_LOGIQUE_OPTIONS, existingAvis.difficulte_logique);
+        const diffAcquisitionHtml = createOptions(DIFFICULTE_ACQUISITION_OPTIONS, existingAvis.difficulte_acquisition);
+        const diffPotentielHtml = createOptions(DIFFICULTE_POTENTIEL_OPTIONS, existingAvis.difficulte_potentiel);
+        const diffGestionErreursHtml = createOptions(DIFFICULTE_GESTION_ERREURS_OPTIONS, existingAvis.difficulte_gestion_erreurs);
+
 
         // Crée le HTML du formulaire
         container.innerHTML = `
@@ -363,7 +504,7 @@
                   Qualité du travail
                 </label>
                 <select id="avis-travail" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
-                  ${niveauOptionsHtml}
+                  ${travailOptionsHtml}
                 </select>
               </div>
 
@@ -387,18 +528,61 @@
                 </select>
               </div>
 
-              <!-- Section Difficultés rencontrées -->
-              <div>
-                <label for="avis-difficultes" class="block text-sm font-medium text-slate-700 mb-1">
-                  Difficultés rencontrées
-                </label>
-                <select id="avis-difficultes" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
-                  ${difficultesOptionsHtml}
-                </select>
+              <!-- NOUVELLE Section Difficultés (divisée) -->
+              <div class="border-t border-slate-200 pt-6">
+                <h3 class="text-lg font-medium text-slate-800 mb-4">Analyse des Difficultés / Progression</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  
+                  <div>
+                    <label for="avis-diff-comprehension" class="block text-sm font-medium text-slate-700 mb-1">
+                      Compréhension
+                    </label>
+                    <select id="avis-diff-comprehension" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
+                      ${diffComprehensionHtml}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label for="avis-diff-logique" class="block text-sm font-medium text-slate-700 mb-1">
+                      Logique / Raisonnement
+                    </label>
+                    <select id="avis-diff-logique" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
+                      ${diffLogiqueHtml}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label for="avis-diff-acquisition" class="block text-sm font-medium text-slate-700 mb-1">
+                      Acquisition des savoirs
+                    </label>
+                    <select id="avis-diff-acquisition" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
+                      ${diffAcquisitionHtml}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label for="avis-diff-potentiel" class="block text-sm font-medium text-slate-700 mb-1">
+                      Potentiel / Progression
+                    </label>
+                    <select id="avis-diff-potentiel" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
+                      ${diffPotentielHtml}
+                    </select>
+                  </div>
+
+                  <div class="md:col-span-2">
+                    <label for="avis-diff-gestion-erreurs" class="block text-sm font-medium text-slate-700 mb-1">
+                      Gestion des erreurs
+                    </label>
+                    <select id="avis-diff-gestion-erreurs" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">
+                      ${diffGestionErreursHtml}
+                    </select>
+                  </div>
+
+                </div>
               </div>
 
               <!-- Section Commentaires -->
-              <div>
+              <div class="border-t border-slate-200 pt-6">
                 <label for="avis-commentaires" class="block text-sm font-medium text-slate-700 mb-1">
                   Commentaire (facultatif)
                 </label>
@@ -406,7 +590,7 @@
               </div>
               
               <!-- Bouton de sauvegarde -->
-              <div class="text-right">
+              <div class="text-right pt-4">
                 <button type="submit" id="save-avis-button" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">
                   Enregistrer l'avis
                 </button>
@@ -506,7 +690,13 @@
           travail: document.getElementById('avis-travail').value,
           comportement: document.getElementById('avis-comportement').value,
           attitude: document.getElementById('avis-attitude').value,
-          difficultes: document.getElementById('avis-difficultes').value,
+          // Nouveaux champs de difficultés
+          difficulte_comprehension: document.getElementById('avis-diff-comprehension').value,
+          difficulte_logique: document.getElementById('avis-diff-logique').value,
+          difficulte_acquisition: document.getElementById('avis-diff-acquisition').value,
+          difficulte_potentiel: document.getElementById('avis-diff-potentiel').value,
+          difficulte_gestion_erreurs: document.getElementById('avis-diff-gestion-erreurs').value,
+          // Champ commentaire
           commentaires: document.getElementById('avis-commentaires').value,
         };
 
@@ -546,7 +736,7 @@
       }
 
       /**
-       * Gère l'export PDF (copié-collé de App.tsx).
+       * Gère l'export PDF (mis à jour pour la nouvelle structure).
        */
       function handleExportClassePDF() {
         const doc = new jsPDF();
@@ -602,7 +792,7 @@
                 doc.setFontSize(10);
                 
                 const addSection = (title, value) => {
-                  if (value && value !== NiveauOption.NonEvalue && value !== DifficulteOption.NonEvalue) {
+                  if (value && value !== NON_EVALUE) {
                     if (y > pageHeight - margin) {
                       doc.addPage();
                       y = margin;
@@ -616,9 +806,16 @@
                 addSection("Qualité du travail", avisEnseignant.avis.travail);
                 addSection("Comportement en classe", avisEnseignant.avis.comportement);
                 addSection("Attitude", avisEnseignant.avis.attitude);
-                addSection("Difficultés rencontrées", avisEnseignant.avis.difficultes);
+                
+                // Ajout des nouvelles sections de difficultés
+                addSection("Difficultés (Compréhension)", avisEnseignant.avis.difficulte_comprehension);
+                addSection("Difficultés (Logique)", avisEnseignant.avis.difficulte_logique);
+                addSection("Difficultés (Acquisition)", avisEnseignant.avis.difficulte_acquisition);
+                addSection("Difficultés (Potentiel)", avisEnseignant.avis.difficulte_potentiel);
+                addSection("Difficultés (Gestion erreurs)", avisEnseignant.avis.difficulte_gestion_erreurs);
 
-                if (avisEnseignant.avis.commentaires) {
+
+                if (avisEnseignant.avis.commentaires && avisEnseignant.avis.commentaires.trim() !== "") {
                   if (y > pageHeight - margin - 10) {
                     doc.addPage();
                     y = margin;

@@ -5,11 +5,7 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Évaluation des Élèves</title>
-    <!-- Chargement de Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 
-      Import map pour charger des modules JavaScript comme 'jspdf'.
-    -->
     <script type="importmap">
       {
         "imports": {
@@ -36,19 +32,13 @@
     </style>
   </head>
   <body class="h-full m-0">
-    <!-- 
-      La structure HTML principale de l'application.
-    -->
     <div id="app-root" class="h-screen w-screen flex flex-col font-sans">
       <header class="w-full bg-white shadow-md z-10 print:hidden">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap justify-between items-center gap-3">
           <div class="flex items-center gap-4 flex-wrap">
             <h1 class="text-2xl font-bold text-slate-900">Avis Élèves</h1>
-            <!-- Sélecteur de période -->
             <div id="period-selector" class="flex items-center gap-1 rounded-md bg-slate-100 p-1 border border-slate-200">
-              <!-- Les boutons radio seront insérés ici par JS -->
-            </div>
-            <!-- Bouton d'export PDF -->
+              </div>
             <button
               id="export-pdf-button"
               class="px-4 py-2 bg-slate-700 text-white font-semibold rounded-md shadow-sm hover:bg-slate-800 transition-colors flex items-center gap-2 text-sm"
@@ -59,7 +49,6 @@
               </svg>
               <span>Exporter la classe (PDF)</span>
             </button>
-            <!-- Bouton d'aide (Guide d'utilisation) -->
             <button
               id="help-button"
               class="p-2 bg-sky-600 text-white font-bold rounded-full shadow-sm hover:bg-sky-700 transition-colors flex items-center justify-center text-sm w-8 h-8"
@@ -68,7 +57,6 @@
               ?
             </button>
           </div>
-          <!-- Sélecteur d'enseignant -->
           <div class="flex items-center space-x-3">
             <label for="teacher-select" class="text-sm font-medium text-slate-700 whitespace-nowrap">
               Connecté en tant que :
@@ -77,32 +65,24 @@
               id="teacher-select"
               class="block w-full max-w-xs pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm rounded-md shadow-sm"
             >
-              <!-- Les options d'enseignants seront insérées ici par JS -->
-            </select>
+              </select>
           </div>
         </div>
       </header>
       <main class="flex-grow flex flex-col md:flex-row overflow-hidden">
-        <!-- Conteneur pour la liste des élèves (StudentList) -->
         <div id="student-list-container" class="w-full md:w-1/3 lg:w-1/4 bg-white border-r border-slate-200 h-full overflow-y-auto print:hidden">
-          <!-- Le contenu sera généré par renderStudentList() -->
-        </div>
-        <!-- Conteneur pour le formulaire d'avis (FeedbackForm) -->
+          </div>
         <div id="feedback-form-container" class="w-full md:w-2/3 lg:w-3/4 bg-slate-50 h-full overflow-y-auto p-6 md:p-8">
-          <!-- Le contenu sera généré par renderFeedbackForm() -->
-        </div>
+          </div>
       </main>
     </div>
 
-    <!-- Modal de Guide d'utilisation -->
     <div id="help-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
       <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto z-50">
-        <!-- En-tête du modal -->
         <div class="flex justify-between items-center p-4 border-b">
           <h3 class="text-xl font-bold text-slate-800">Guide d'utilisation</h3>
           <button id="close-modal-button" class="text-slate-500 hover:text-slate-800 font-bold text-2xl">&times;</button>
         </div>
-        <!-- Contenu du modal -->
         <div class="p-6">
           <ol class="list-decimal list-inside space-y-3 text-slate-700">
             <li>Je choisis le type de semestre (ex: S1, S2...).</li>
@@ -123,13 +103,6 @@
         </div>
       </div>
     </div>
-    <!-- Fin du Modal -->
-
-
-    <!-- 
-      Début du script JavaScript
-      Ce script contient toute la logique de l'application.
-    -->
     <script type="module">
       // Importation de jsPDF depuis l'import map
       import jsPDF from 'jspdf';
@@ -298,33 +271,33 @@
         commentaires: ""
       };
 
-      // Liste des élèves mise à jour
+      // Liste des élèves mise à jour (NOMS DE FAMILLE SUPPRIMÉS)
       const ELEVES_INITIAUX = [
-        { id: 1, nom: "ABDELMAJID", prenom: "Khadija", avis: [] },
-        { id: 2, nom: "BABI", prenom: "Nour", avis: [] },
-        { id: 3, nom: "BELHADI", prenom: "Mélissa", avis: [] },
-        { id: 4, nom: "BOUKHIAR", prenom: "Fatima", avis: [] },
-        { id: 5, nom: "CHARLES", prenom: "Glory", avis: [] },
-        { id: 6, nom: "DESLONG", prenom: "Rayane Bamba", avis: [] },
-        { id: 7, nom: "DEVILLE", prenom: "Chloé", avis: [] },
-        { id: 8, nom: "EGLELA", prenom: "Orlane", avis: [] },
-        { id: 9, nom: "EL ASRI", prenom: "Ayman", avis: [] },
-        { id: 10, nom: "GUELLOULI", prenom: "Malak", avis: [] },
-        { id: 11, nom: "HASSANI", prenom: "Killyann", avis: [] },
-        { id: 12, nom: "INSELIN", prenom: "Enzo", avis: [] },
-        { id: 13, nom: "JILAVU", prenom: "Maria-Teodora", avis: [] },
-        { id: 14, nom: "JOJUA", prenom: "Giorgi", avis: [] },
-        { id: 15, nom: "KHACHATRIAN", prenom: "Angelina", avis: [] },
-        { id: 16, nom: "KONNEH", prenom: "Karamba", avis: [] },
-        { id: 17, nom: "LUNIMBU", prenom: "Fernanda", avis: [] },
-        { id: 18, nom: "MUNIER", prenom: "Kelly", avis: [] },
-        { id: 19, nom: "OUERFELLI", prenom: "Samia", avis: [] },
-        { id: 20, nom: "POUGIN", prenom: "Pharel", avis: [] },
-        { id: 21, nom: "QACHRI", prenom: "Adam", avis: [] },
-        { id: 22, nom: "ROUQUETTE", prenom: "Noa", avis: [] },
-        { id: 23, nom: "TAYEB PACHA", prenom: "Romayssa", avis: [] },
-        { id: 24, nom: "TOUATI", prenom: "Ranim", avis: [] },
-        { id: 25, nom: "YANG", prenom: "Danny", avis: [] },
+        { id: 1, nom: "", prenom: "Khadija", avis: [] },
+        { id: 2, nom: "", prenom: "Nour", avis: [] },
+        { id: 3, nom: "", prenom: "Mélissa", avis: [] },
+        { id: 4, nom: "", prenom: "Fatima", avis: [] },
+        { id: 5, nom: "", prenom: "Glory", avis: [] },
+        { id: 6, nom: "", prenom: "Rayane Bamba", avis: [] },
+        { id: 7, nom: "", prenom: "Chloé", avis: [] },
+        { id: 8, nom: "", prenom: "Orlane", avis: [] },
+        { id: 9, nom: "", prenom: "Ayman", avis: [] },
+        { id: 10, nom: "", prenom: "Malak", avis: [] },
+        { id: 11, nom: "", prenom: "Killyann", avis: [] },
+        { id: 12, nom: "", prenom: "Enzo", avis: [] },
+        { id: 13, nom: "", prenom: "Maria-Teodora", avis: [] },
+        { id: 14, nom: "", prenom: "Giorgi", avis: [] },
+        { id: 15, nom: "", prenom: "Angelina", avis: [] },
+        { id: 16, nom: "", prenom: "Karamba", avis: [] },
+        { id: 17, nom: "", prenom: "Fernanda", avis: [] },
+        { id: 18, nom: "", prenom: "Kelly", avis: [] },
+        { id: 19, nom: "", prenom: "Samia", avis: [] },
+        { id: 20, nom: "", prenom: "Pharel", avis: [] },
+        { id: 21, nom: "", prenom: "Adam", avis: [] },
+        { id: 22, nom: "", prenom: "Noa", avis: [] },
+        { id: 23, nom: "", prenom: "Romayssa", avis: [] },
+        { id: 24, nom: "", prenom: "Ranim", avis: [] },
+        { id: 25, nom: "", prenom: "Danny", avis: [] },
       ];
 
       const PERIODES = ['mi-S1', 'S1', 'mi-S2', 'S2'];
@@ -391,7 +364,12 @@
 
         container.innerHTML = ''; // Vide le conteneur
 
-        const sortedEleves = [...state.eleves].sort((a, b) => a.nom.localeCompare(b.nom));
+        // Le tri est maintenu, mais se fera principalement sur le prénom si le nom est vide
+        const sortedEleves = [...state.eleves].sort((a, b) => {
+            const nameA = (a.nom + a.prenom).trim();
+            const nameB = (b.nom + b.prenom).trim();
+            return nameA.localeCompare(nameB);
+        });
 
         sortedEleves.forEach(eleve => {
           const isSelected = eleve.id === state.selectedEleveId;
@@ -415,11 +393,11 @@
             isSelected ? 'bg-sky-100' : 'hover:bg-slate-50'
           }`;
           
+          // Affiche UNIQUEMENT le prénom (eleve.nom étant vide)
           studentDiv.innerHTML = `
             <div class="flex justify-between items-center">
               <span class="font-medium ${isSelected ? 'text-sky-700' : 'text-slate-800'}">
-                ${eleve.nom} ${eleve.prenom}
-              </span>
+                ${eleve.prenom} </span>
               ${hasAvis ? 
                 `<span title="Avis complété" class="h-3 w-3 bg-green-500 rounded-full flex-shrink-0"></span>` : 
                 `<span title="Avis non complété" class="h-3 w-3 bg-slate-300 rounded-full flex-shrink-0"></span>`
@@ -489,8 +467,7 @@
         container.innerHTML = `
           <div class="max-w-3xl mx-auto">
             <h2 class="text-3xl font-bold text-slate-800 mb-2">
-              ${selectedEleve.prenom} ${selectedEleve.nom}
-            </h2>
+              ${selectedEleve.prenom} ${selectedEleve.nom} </h2>
             <p class="text-lg text-slate-600 mb-6">
               Avis de: <span class="font-semibold text-slate-700">${enseignant.nom}</span>
               <span class="text-slate-400 mx-2">|</span>
@@ -498,7 +475,6 @@
             </p>
 
             <form id="feedback-form" class="space-y-6">
-              <!-- Section Qualité du travail -->
               <div>
                 <label for="avis-travail" class="block text-sm font-medium text-slate-700 mb-1">
                   Qualité du travail
@@ -508,7 +484,6 @@
                 </select>
               </div>
 
-              <!-- Section Comportement en classe -->
               <div>
                 <label for="avis-comportement" class="block text-sm font-medium text-slate-700 mb-1">
                   Comportement en classe
@@ -518,7 +493,6 @@
                 </select>
               </div>
 
-              <!-- Section Attitude -->
               <div>
                 <label for="avis-attitude" class="block text-sm font-medium text-slate-700 mb-1">
                   Attitude (sérieux, implication)
@@ -528,7 +502,6 @@
                 </select>
               </div>
 
-              <!-- NOUVELLE Section Difficultés (divisée) -->
               <div class="border-t border-slate-200 pt-6">
                 <h3 class="text-lg font-medium text-slate-800 mb-4">Analyse des Difficultés / Progression</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -581,7 +554,6 @@
                 </div>
               </div>
 
-              <!-- Section Commentaires -->
               <div class="border-t border-slate-200 pt-6">
                 <label for="avis-commentaires" class="block text-sm font-medium text-slate-700 mb-1">
                   Commentaire (facultatif)
@@ -589,7 +561,6 @@
                 <textarea id="avis-commentaires" rows="4" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 sm:text-sm">${existingAvis.commentaires}</textarea>
               </div>
               
-              <!-- Bouton de sauvegarde -->
               <div class="text-right pt-4">
                 <button type="submit" id="save-avis-button" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500">
                   Enregistrer l'avis
@@ -753,7 +724,12 @@
         doc.text(`Date: ${new Date().toLocaleDateString('fr-FR')}`, 105, y, { align: 'center' });
         y += 15;
 
-        const sortedEleves = [...state.eleves].sort((a, b) => a.nom.localeCompare(b.nom));
+        // Le tri est conservé même si le nom est vide
+        const sortedEleves = [...state.eleves].sort((a, b) => {
+            const nameA = (a.nom + a.prenom).trim();
+            const nameB = (b.nom + b.prenom).trim();
+            return nameA.localeCompare(nameB);
+        });
 
         sortedEleves.forEach((eleve) => {
           if (eleve.avis.length > 0) {
@@ -769,6 +745,7 @@
 
             doc.setFontSize(16);
             doc.setFont('helvetica', 'bold');
+            // Affichage du nom/prénom pour le PDF. Si nom est vide, seul le prénom s'affiche.
             doc.text(`${eleve.nom} ${eleve.prenom}`, margin, y);
             y += 10;
 
@@ -883,6 +860,5 @@
       document.addEventListener('DOMContentLoaded', main);
 
     </script>
-    <!-- Fin du script JavaScript -->
-  </body>
+    </body>
 </html>

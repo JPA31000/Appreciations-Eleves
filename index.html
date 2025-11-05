@@ -648,8 +648,8 @@
         renderSelectors();
         renderStudentList();
         renderFeedbackForm();
-        // Sauvegarde l'état après chaque rendu
-        saveStateToStorage(); 
+        // La sauvegarde ne se fait plus automatiquement ici
+        // saveStateToStorage(); 
       }
 
       // --- Gestionnaires d'Événements ---
@@ -733,6 +733,7 @@
 
         // Met à jour la liste des élèves pour afficher la pastille de statut et sauvegarde l'état
         renderApp();
+        saveStateToStorage(); // La sauvegarde se fait maintenant UNIQUEMENT ici
       }
 
       /**
